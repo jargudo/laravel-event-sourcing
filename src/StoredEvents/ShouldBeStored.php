@@ -53,7 +53,7 @@ abstract class ShouldBeStored
         return $this->metaData[MetaData::STORED_EVENT_ID] ?? null;
     }
 
-    public function setStoredEventId(int $id): self
+    public function setStoredEventId(string $id): self
     {
         $this->metaData[MetaData::STORED_EVENT_ID] = $id;
 
