@@ -1,6 +1,7 @@
 {
     "name": "pdpaola/laravel-event-sourcing",
     "description": "The easiest way to get started with event sourcing in Laravel",
+    "type": "library",
     "keywords": [
         "spatie",
         "laravel-event-sourcing",
