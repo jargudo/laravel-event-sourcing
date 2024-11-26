@@ -3,20 +3,20 @@
 namespace Spatie\EventSourcing\StoredEvents\Repositories;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\LazyCollection;
 use ReflectionClass;
 use ReflectionException;
-use Spatie\EventSourcing\AggregateRoots\Exceptions\InvalidEloquentStoredEventModel;
-use Spatie\EventSourcing\Attributes\EventSerializer as EventSerializerAttribute;
+use Illuminate\Support\LazyCollection;
 use Spatie\EventSourcing\Enums\MetaData;
-use Spatie\EventSourcing\EventSerializers\EventSerializer;
-use Spatie\EventSourcing\StoredEvents\Exceptions\EventClassMapMissing;
-use Spatie\EventSourcing\StoredEvents\Exceptions\InvalidStoredEvent;
-use Spatie\EventSourcing\StoredEvents\Models\EloquentStoredEvent;
-use Spatie\EventSourcing\StoredEvents\Models\EloquentStoredEventQueryBuilder;
-use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
+use Illuminate\Database\Eloquent\Builder;
 use Spatie\EventSourcing\StoredEvents\StoredEvent;
+use Spatie\EventSourcing\StoredEvents\ShouldBeStored;
+use Spatie\EventSourcing\EventSerializers\EventSerializer;
+use Spatie\EventSourcing\StoredEvents\Models\EloquentStoredEvent;
+use Spatie\EventSourcing\StoredEvents\Exceptions\InvalidStoredEvent;
+use Spatie\EventSourcing\StoredEvents\Exceptions\EventClassMapMissing;
+use Spatie\EventSourcing\StoredEvents\Models\EloquentStoredEventQueryBuilder;
+use Spatie\EventSourcing\Attributes\EventSerializer as EventSerializerAttribute;
+use Spatie\EventSourcing\AggregateRoots\Exceptions\InvalidEloquentStoredEventModel;
 
 class EloquentStoredEventRepository implements StoredEventRepository
 {
@@ -31,9 +31,9 @@ class EloquentStoredEventRepository implements StoredEventRepository
         }
     }
 
-    public function find(int $id): StoredEvent
+    public function find(string $id): StoredEvent
     {
-        $eloquentStoredEvent = $this->getQuery()->where('id', $id)->first();
+        $eloquentStoredEvent = $this->getQuery()->where('_id', $id)->first();
 
         return $eloquentStoredEvent->toStoredEvent();
     }
@@ -46,10 +46,10 @@ class EloquentStoredEventRepository implements StoredEventRepository
             $query->whereAggregateRoot($uuid);
         }
 
-        return $query->orderBy('id')->cursor()->map(fn (EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
+        return $query->orderBy('id')->cursor()->map(fn(EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
     }
 
-    public function retrieveAllStartingFrom(int $startingFrom, string $uuid = null): LazyCollection
+    public function retrieveAllStartingFrom(string $startingFrom, string $uuid = null): LazyCollection
     {
         $query = $this->prepareEventModelQuery($startingFrom, $uuid);
 
@@ -58,10 +58,10 @@ class EloquentStoredEventRepository implements StoredEventRepository
             ->orderBy('id')
             ->lazyById();
 
-        return $lazyCollection->map(fn (EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
+        return $lazyCollection->map(fn(EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
     }
 
-    public function countAllStartingFrom(int $startingFrom, string $uuid = null): int
+    public function countAllStartingFrom(string $startingFrom, string $uuid = null): int
     {
         return $this->prepareEventModelQuery($startingFrom, $uuid)->count('id');
     }
@@ -75,7 +75,7 @@ class EloquentStoredEventRepository implements StoredEventRepository
         return $query
             ->orderBy('id')
             ->cursor()
-            ->map(fn (EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
+            ->map(fn(EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
     }
 
     public function persist(ShouldBeStored $event, string $uuid = null): StoredEvent
@@ -107,7 +107,7 @@ class EloquentStoredEventRepository implements StoredEventRepository
             'meta_data' => json_encode($event->metaData() + [
                 MetaData::CREATED_AT => $createdAt->toDateTimeString(),
             ]),
-            'created_at' => $createdAt,
+            'created_at' => $this->formatDateToMongoDB($createdAt->toDateTimeString())
         ]);
 
         $eloquentStoredEvent->save();
@@ -162,8 +162,8 @@ class EloquentStoredEventRepository implements StoredEventRepository
     public function getLatestAggregateVersion(string $aggregateUuid): int
     {
         return $this->getQuery()
-                ->whereAggregateRoot($aggregateUuid)
-                ->max('aggregate_version') ?? 0;
+            ->whereAggregateRoot($aggregateUuid)
+            ->max('aggregate_version') ?? 0;
     }
 
     private function prepareEventModelQuery(int $startingFrom, string $uuid = null): Builder
@@ -180,5 +180,13 @@ class EloquentStoredEventRepository implements StoredEventRepository
     private function getQuery(): EloquentStoredEventQueryBuilder
     {
         return $this->storedEventModel::query();
+    }
+
+    private function formatDateToMongoDB($dateStringToConvert)
+    {
+        $datetime = new Carbon($dateStringToConvert);
+        $miliseconds = $datetime->valueOf();
+
+        return new \MongoDB\BSON\UTCDateTime($miliseconds);
     }
 }
