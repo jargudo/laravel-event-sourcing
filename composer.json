@@ -1,5 +1,5 @@
 {
-    "name": "pdpaola/laravel-event-sourcing",
+    "name": "jargudo/laravel-event-sourcing",
     "description": "The easiest way to get started with event sourcing in Laravel",
     "type": "library",
     "keywords": [
