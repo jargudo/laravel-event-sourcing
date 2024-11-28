@@ -48,7 +48,7 @@ abstract class ShouldBeStored
         return $this;
     }
 
-    public function storedEventId(): ?int
+    public function storedEventId(): ?string
     {
         return $this->metaData[MetaData::STORED_EVENT_ID] ?? null;
     }
