@@ -46,7 +46,7 @@ class EloquentStoredEventRepository implements StoredEventRepository
             $query->whereAggregateRoot($uuid);
         }
 
-        return $query->orderBy('id')->cursor()->map(fn(EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
+        return $query->orderBy('_id')->cursor()->map(fn(EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
     }
 
     public function retrieveAllStartingFrom(string $startingFrom, string $uuid = null): LazyCollection
@@ -55,7 +55,7 @@ class EloquentStoredEventRepository implements StoredEventRepository
 
         /** @var LazyCollection $lazyCollection */
         $lazyCollection = $query
-            ->orderBy('id')
+            ->orderBy('_id')
             ->lazyById();
 
         return $lazyCollection->map(fn(EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
@@ -63,7 +63,7 @@ class EloquentStoredEventRepository implements StoredEventRepository
 
     public function countAllStartingFrom(string $startingFrom, string $uuid = null): int
     {
-        return $this->prepareEventModelQuery($startingFrom, $uuid)->count('id');
+        return $this->prepareEventModelQuery($startingFrom, $uuid)->count('_id');
     }
 
     public function retrieveAllAfterVersion(int $aggregateVersion, string $aggregateUuid): LazyCollection
@@ -73,7 +73,7 @@ class EloquentStoredEventRepository implements StoredEventRepository
             ->afterVersion($aggregateVersion);
 
         return $query
-            ->orderBy('id')
+            ->orderBy('_id')
             ->cursor()
             ->map(fn(EloquentStoredEvent $storedEvent) => $storedEvent->toStoredEvent());
     }
